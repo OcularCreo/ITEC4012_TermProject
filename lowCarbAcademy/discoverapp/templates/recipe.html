@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recipe</title>
+</head>
+<body>
+    {% block content %}
+
+        {{ recipe.name }}<br><br>
+        {{ recipe.ingreds }}<br><br>
+        {{ recipe.steps }}<br>
+        {{ recipe.minutes }}<br>
+
+    {% endblock %}
+</body>
+</html>

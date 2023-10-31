@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SEARCH</title>
+</head>
+<body>
+    <form method="POST" action="{% url 'search' %}">
+
+        {% csrf_token %}
+
+        <input type="search" placeholder="search here" name="search-bar">
+        <button type="submit">Search</button>
+    </form>
+
+    {% block content %}
+        {% if searched %}
+            <h1>Results for {{ searched }}</h1>
+            {% for recipe in recipes %}
+            <a href="{% url 'show_recipe' recipe.id %}">{{ recipe.name }}</a><br/><br/>
+            {% endfor %}
+        {% endif %}
+    {% endblock %}
+
+</body>
+</html>
