@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from .models import Recipe
 from .models import UserRecipe
 from django.db.models import Q
+from django.core.paginator import Paginator
 
 
 # Create your views here.
@@ -67,10 +68,16 @@ def favourite_recipe(request):
 
 def search_recipes(request):
 
-    if request.method == "POST":
-        searched = request.POST["search-bar"]
+    if request.method == "GET":
+        searched = request.GET.get("search-bar")
 
-        recipes = Recipe.objects.filter(Q(name__contains=searched) | Q(tags__contains=searched))
+        # using filter to search data base
+        all_recipes = Recipe.objects.filter(Q(name__contains=searched) | Q(tags__contains=searched))
+
+        # Pagination
+        p = Paginator(all_recipes, 50)
+        page = request.GET.get('page')
+        recipes = p.get_page(page)
 
         return render(request, 'search.html', {'searched': searched, 'recipes': recipes})
     else:

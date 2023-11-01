@@ -5,9 +5,9 @@
     <title>SEARCH</title>
 </head>
 <body>
-    <form method="POST" action="{% url 'search' %}">
+    <form method="GET" action="{% url 'search' %}">
 
-        {% csrf_token %}
+        <!--{% csrf_token %}-->
 
         <input type="search" placeholder="search here" name="search-bar">
         <button type="submit">Search</button>
@@ -26,7 +26,7 @@
 
             -->
 
-            <div id="cookbook-div" style="display:none">
+            <div id="cookbook-div" style="display:none;">
 
                 <!-- display the existing cook books -->
                 <a href="">testing</a>
@@ -45,11 +45,12 @@
             <script>
                 function addbook() {
                     var addBookDiv = document.getElementById("cookbook-div");
-                    if(addBookDiv.display === 'none'){
-                        addBookDiv.display = 'block';
+                    if(addBookDiv.style.display === 'none'){
+                        addBookDiv.style.display = 'block';
+                        console.log("visible");
                     } else {
-                        addBookDiv.display = 'none';
-                        console.log("here");
+                        addBookDiv.style.display = 'none';
+                        console.log("invis");
                     }
                 }
             </script>
@@ -62,6 +63,20 @@
 
             <a href="{% url 'show_recipe' recipe.id %}">{{ recipe.name }}</a><br/><br/>
             {% endfor %}
+
+            {% if recipes.has_previous %}
+                <a href="?search-bar={{ searched }}&page=1">&laquo First Page</a>
+                <a href="?search-bar={{ searched }}&page={{ recipes.previous_page_number }}">Previous</a>
+
+            {% endif %}
+
+            Page {{ recipes.number }} of {{ recipes.paginator.num_pages }}
+
+            {% if recipes.has_next %}
+                <a href="?search-bar={{ searched }}&page={{ recipes.next_page_number }}">Next</a>
+                <a href="?search-bar={{ searched }}&page={{ recipes.paginator.num_pages }}">Last &raquo</a>
+
+            {% endif %}
 
         {% endif %}
     {% endblock %}
