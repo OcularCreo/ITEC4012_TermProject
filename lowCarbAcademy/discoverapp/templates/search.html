@@ -17,8 +17,52 @@
         {% if searched %}
             <h1>Results for {{ searched }}</h1>
             {% for recipe in recipes %}
+
+            <!--
+
+            1. probably create a div
+            2. display all exisiting cookbooks user has
+            3. add final button to create a new cook book
+
+            -->
+
+            <div id="cookbook-div" style="display:none">
+
+                <!-- display the existing cook books -->
+                <a href="">testing</a>
+
+                <!-- option for adding cookbook -->
+
+                <div id="new-book-div">
+                    <form method="POST" action="{% url 'cookbook' %}" id="cookbook-form">
+
+
+                    </form>
+                </div>
+            </div>
+
+            <button onclick='addbook()'>add to cookbook</button>
+            <script>
+                function addbook() {
+                    var addBookDiv = document.getElementById("cookbook-div");
+                    if(addBookDiv.display === 'none'){
+                        addBookDiv.display = 'block';
+                    } else {
+                        addBookDiv.display = 'none';
+                        console.log("here");
+                    }
+                }
+            </script>
+
+
+            <form method="POST" action="{% url 'fav_recipe' %}">
+                {% csrf_token %}
+                <button type="submit" value="{{ recipe.id }}" name="faved" id="fav-button">Favourite</button>
+            </form>
+
             <a href="{% url 'show_recipe' recipe.id %}">{{ recipe.name }}</a><br/><br/>
             {% endfor %}
+
         {% endif %}
     {% endblock %}
 

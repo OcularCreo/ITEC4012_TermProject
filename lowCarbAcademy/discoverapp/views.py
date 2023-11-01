@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import Recipe
+from .models import UserRecipe
 from django.db.models import Q
 
 
@@ -56,6 +57,14 @@ def register_user(request):
     else:
         return render(request, 'register.html')
 
+def favourite_recipe(request):
+
+    if request.method == "POST":
+        return render(request, 'home.html')
+
+    else:
+        return render(request, 'home.html')
+
 def search_recipes(request):
 
     if request.method == "POST":
@@ -72,3 +81,38 @@ def show_recipe(request, recipe_id):
     recipe = Recipe.objects.get(pk=recipe_id)
 
     return render(request, 'recipe.html', {'recipe': recipe})
+
+def favourite_recipe(request):
+
+    if request.method == "POST":
+
+        # get the id of the recipe and signed in user
+        curr_user_id = request.user.id
+        recipe_id = request.POST['faved']
+
+        # search for row containing both keys/ids
+        occurance = UserRecipe.objects.filter(user_id=curr_user_id, recipe_id=recipe_id).latest('user_id', 'recipe_id')
+
+        #when there are no matches
+        if not occurance:
+            print("no matches")
+
+            favourited = UserRecipe.objects.create(user_id=request.user.id, recipe_id=recipe_id, favourite=True)
+            favourited.save()
+
+        #when there is a match
+        else:
+
+            instance = UserRecipe.objects.get(id=getattr(occurance, 'id'))
+            instance.delete();
+
+    else:
+        print("hello")
+
+    return render(request, 'search.html')
+
+def cookbook(request):
+
+    # get id of user
+
+    return render(request, 'search.html')

@@ -1,7 +1,8 @@
 from django.contrib.postgres.fields import ArrayField
-from django.db import models
 import datetime
+from django.db import models
 from django.utils.translation import gettext as _
+from django.contrib.auth.models import User
 
 
 # Create your models here.
@@ -23,6 +24,7 @@ class Recipe(models.Model):
         return f'{self.name} {self.minutes} {self.submitted} {self.tags} {self.nutrition} {self.steps} {self.step_num} {self.ingreds} {self.ingred_num}'
 
 
+"""
 # user model
 class User(models.Model):
     username = models.CharField(max_length=50)
@@ -30,3 +32,14 @@ class User(models.Model):
 
     def __str__(self):
         return f'{self.username} {self.password}'
+"""
+
+# junction table for users and recipes
+class UserRecipe(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, null=True)
+    favourite = models.BooleanField(default=False)
+    playlist_name = models.CharField(max_length=150)
+
+    def __str__(self):
+        return f'{self.user} {self.recipe} {self.favourite} {self.playlist_name}'
