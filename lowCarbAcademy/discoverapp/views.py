@@ -112,7 +112,7 @@ def favourite_recipe(request):
         recipe_id = request.POST['faved']
 
         # search for row containing both keys/ids
-        occurance = UserRecipe.objects.filter(user_id=curr_user_id, recipe_id=recipe_id).latest('user_id', 'recipe_id')
+        occurance = UserRecipe.objects.filter(user_id=curr_user_id, recipe_id=recipe_id).first() # latest('user_id', 'recipe_id')
 
         # when there are no matches
         if not occurance:
