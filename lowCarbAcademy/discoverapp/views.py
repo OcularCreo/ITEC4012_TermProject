@@ -15,12 +15,16 @@ def home(request):
 def login_user(request):
 
     if request.method == "POST":
+
+        # read in the user input from post request
         username = request.POST['username-input']
         password = request.POST['password-input']
 
+        # use authenticate function to verify if the user already exists or not
         user = authenticate(request, username=username, password=password)
 
-        if user is not None:
+        # when the user does exist and the data sent isn't blank login the user otherwise do nothing
+        if user is not None and username is not None and password is not None:
             login(request, user)
             #messages.success(request, ("login sucessful"))
             return redirect('home')
@@ -33,16 +37,19 @@ def login_user(request):
 
 def logout_user(request):
     logout(request)
-    messages.success(request, ("You logged out"))
+    messages.success(request, "You logged out")
     return redirect('home')
 
 def register_user(request):
 
     if request.method == "POST":
+
+        # read in the user inputs from post request
         username = request.POST['username-input']
         password1 = request.POST['password-input1']
         password2 = request.POST['password-input2']
 
+        # make sure that the passwords sent are not the same or that the user doesn't already exist. If everything is good then make the user and log them in
         if password1 != password2:
             print("password not matching - new")
         elif User.objects.filter(username=username).exists():
@@ -58,24 +65,14 @@ def register_user(request):
     else:
         return render(request, 'register.html')
 
-"""
-def favourite_recipe(request):
-
-    if request.method == "POST":
-        return render(request, 'home.html')
-    else:
-        return render(request, 'home.html')
-        
-"""
-
 def search_recipes(request):
 
     if request.method == "GET":
 
-        #retrive data from the request
+        # retrive data from the request
         searched = request.GET.get("search-bar")
 
-        #do the following when the user has searched something
+        # do the following when the user has searched something
         if searched:
 
             # using filter to search database
@@ -99,6 +96,7 @@ def search_recipes(request):
 
 def show_recipe(request, recipe_id):
 
+    # find the recipe given by recipe_id and return it
     recipe = Recipe.objects.get(pk=recipe_id)
 
     return render(request, 'recipe.html', {'recipe': recipe})
@@ -202,7 +200,6 @@ def cookbook(request):
                 print("already exists in book")
 
 
-
     else:
         print(request)
 
@@ -214,64 +211,29 @@ def library(request):
 
     # get all favourited recipes
     faved_UserRecipes = UserRecipe.objects.filter(user_id=request.user.id, favourite=True).values("recipe_id")
-    faved_recipes = []
+    faved_recipes = []  # variable used to store all favourited recipes | faved_recipes = [recipe1, recipe2, ...]
 
+    # loop through all favourited recipes found by filter & store the id of each favourited recipe into a list
     for recipe in faved_UserRecipes:
         faved_recipes.append(Recipe.objects.filter(id=recipe['recipe_id']).first())
 
     # get all cookbooks
     user_bookNames = UserRecipe.objects.filter(user_id=request.user.id).values("playlist_name").distinct()
-    user_cookbooks = []
+    user_cookbooks = []     # list used to store list of recipes | [book1, book2, ...] book1 = [recipe1, recipe2, ...]
 
+    # loop through all distinctly found book names
     for book in user_bookNames:
 
+        # find all recipes that belong to the book the loop current has
         currentBook = UserRecipe.objects.filter(user_id=request.user.id, playlist_name=book['playlist_name']).values("recipe_id")
-        book_recipes = []
+        book_recipes = []   # variable to store all recipes in the cookbook | book_recipes = [recipe1, recipe2, ...]
 
+        # loop through all recipes in the current book found at current loop iteration & store recipe id into a list
         for recipe in currentBook:
             book_recipes.append(Recipe.objects.filter(id=recipe['recipe_id']).first())
 
+        # add the list created into the user_cookbooks variable
         user_cookbooks.append({'bookData': book_recipes, 'bookName': book["playlist_name"]})
 
+    # send the list of cookbooks and favourited recipes to the library page
     return render(request, 'library.html', {'favourited': faved_recipes, 'cookbooks': user_cookbooks})
-
-def recipeToBook(request):
-
-    """
-    if request.method == "POST":
-        cookbook = request.POST["book"]
-        recipe_id = request.POST["recipe-id"]
-        curr_user = request.user.id
-
-        # check if recipe and user already have a record in the junction table
-        existing_rec = UserRecipe.objects.filter(user_id=curr_user, recipe_id=recipe_id).first()
-
-        print(existing_rec)
-
-        # if there is a record that already exists
-        if existing_rec:
-
-            print("RECORD FOUND")
-
-            # get the record's value in the favourite column
-            existing_fav = UserRecipe.objects.get(id=getattr(existing_rec, 'id'))
-
-            print("EXISTING RECORD ID: " + str(getattr(existing_rec, 'id')))
-
-            if not existing_fav.favourite:
-                new_book = UserRecipe.objects.create(user_id=request.user.id, recipe_id=recipe_id, favourite=False, playlist_name=cookbook)
-                new_book.save()
-            else:
-                # just update the playlist name field if recipe is already saved as a favourite
-                existing_fav.update(playlist_name=new_book_name)
-
-        else:
-            # if a record does not exist
-            print("NO RECORD FOUND")
-            #new_book = UserRecipe.objects.create(user_id=request.user.id, recipe_id=recipe_id, favourite=False, playlist_name=cookbook)
-            #new_book.save()
-
-    """
-
-    return redirect('search/?search-bar=food')
-    #return render(request, 'search.html')

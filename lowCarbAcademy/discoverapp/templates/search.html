@@ -13,7 +13,10 @@
         <button type="submit">Search</button>
     </form>
 
+    <!-- potentially use block content to moduelize html templates -->
     {% block content %}
+
+        <!-- when page is loaded with searched not being empty show the following -->
         {% if searched %}
             <h1>Results for {{ searched }}</h1>
             {% for recipe in recipes %}
