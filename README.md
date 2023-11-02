@@ -1,5 +1,7 @@
 # ITEC4012_TermProject
 
+git repository: https://github.com/OcularCreo/ITEC4012_TermProject.git
+
 1. Clone git repository to desired location
 2. Open pycharm and select open project
 3. Setup configurations in project. attach script to manage.py in lowCarbAcademy folder and include runserver command.
