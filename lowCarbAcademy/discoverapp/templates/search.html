@@ -18,15 +18,21 @@
             <h1>Results for {{ searched }}</h1>
             {% for recipe in recipes %}
 
-            <div id="cookbook-div" style="display:none;">
+            <div id="cookbook-div-{{ recipe.id }}" style="display:none;">
 
-                <!-- display the existing cook books -->
-                <a href="">testing</a>
+                {% for cookbook in cookbooks %}
 
-                <!-- option for adding cookbook -->
+                    <form method="POST" action="{% url 'cookbook' %}">
+                        {% csrf_token %}
+                        <input type="hidden" value="{{ recipe.id }}" name="new-book-recipe">
+                        <input type="hidden" value="{{ cookbook.playlist_name }}" name="new-book">
+                        <button type="submit">{{ cookbook.playlist_name }}</button>
+                    </form>
+
+                {% endfor %}
 
                 <br>
-                <div id="new-book-div" style="display:none;">
+                <div id="new-book-div-{{ recipe.id }}" style="display:none;">
                     <form method="POST" action="{% url 'cookbook' %}" id="cookbook-form">
 
                         {% csrf_token %}
@@ -36,10 +42,10 @@
                         <button type="submit" value="{{ recipe.id }}" name="new-book-recipe">Submit</button>
                     </form>
                 </div>
-                <button onclick='toggleDivVis(document.getElementById("new-book-div"))'>CREATE COOKBOOK</button>
+                <button onclick='toggleDivVis(document.getElementById("new-book-div-{{ recipe.id }}"))'>CREATE COOKBOOK</button>
             </div>
 
-            <button onclick='toggleDivVis(document.getElementById("cookbook-div"))'>add to cookbook</button>
+            <button onclick='toggleDivVis(document.getElementById("cookbook-div-{{ recipe.id }}"))'>add to cookbook</button>
             <script>
                 function toggleDivVis(div_block) {
                     if(div_block.style.display === 'none'){

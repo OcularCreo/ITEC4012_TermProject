@@ -10,4 +10,6 @@ urlpatterns = [
     path('show_recipe/<recipe_id>', views.show_recipe, name='show_recipe'),
     path('favourite_recipe/', views.favourite_recipe, name='fav_recipe'),
     path('cookbook', views.cookbook, name='cookbook'),
+    path('recipeToBook', views.recipeToBook, name='recipe-to-book'),
+    path('library/', views.library, name='library'),
 ]

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+    <h2>Favourites</h2>
+    {% if favourited %}
+        {% for recipe in favourited %}
+            <a href="{% url 'show_recipe' recipe.id %}">{{ recipe.name }}</a><br/><br/>
+        {% endfor %}
+    {% endif %}
+
+    <h2>Cook Books</h2>
+    {% if cookbooks %}
+        {% for cookbook in cookbooks %}
+            <h3> {{ cookbook.bookName }} </h3>
+            {% for recipe in cookbook.bookData %}
+                <a href="{% url 'show_recipe' recipe.id %}">{{ recipe.name }}</a><br/><br/>
+            {% endfor %}
+        {% endfor %}
+    {% endif %}
+
+</body>
+</html>
