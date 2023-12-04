@@ -7,6 +7,15 @@ from .models import UserRecipe
 from django.db.models import Q
 from django.core.paginator import Paginator
 
+from .serializers import RecipeSerializer
+from .serializers import UserRecipeSerializer
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+import json
+import logging
+
 
 # Create your views here.
 def home(request):
@@ -65,6 +74,21 @@ def register_user(request):
     else:
         return render(request, 'register.html')
 
+class SearchRecipe(APIView):
+
+    def get(self, request, recipe_param, pagenum):
+
+        # using filter to search database
+        all_recipes = Recipe.objects.filter(Q(name__contains=recipe_param) | Q(tags__contains=recipe_param))
+
+        # Pagination
+        p = Paginator(all_recipes, 10)
+        page = pagenum
+        recipes = p.get_page(page)
+
+        serializer = RecipeSerializer(recipes, many=True)
+        return Response(serializer.data)
+
 def search_recipes(request):
 
     if request.method == "GET":
@@ -88,11 +112,17 @@ def search_recipes(request):
             all_cookbooks = user_userRecipe_objs.values("playlist_name").distinct()
             print(all_cookbooks)
 
-            return render(request, 'search.html', {'searched': searched, 'recipes': recipes, 'cookbooks': all_cookbooks})
+            # return render(request, 'search.html', {'searched': searched, 'recipes': recipes, 'cookbooks': all_cookbooks})
+            serializer = RecipeSerializer(all_recipes, many=True)
+            return Response(serializer.data)
         else:
-            return render(request, 'search.html')
+            return JsonResponse({"success:": True})
+            #return render(request, 'search.html')
+
+    """
     else:
         return render(request, 'search.html')
+    """
 
 def show_recipe(request, recipe_id):
 
@@ -100,6 +130,101 @@ def show_recipe(request, recipe_id):
     recipe = Recipe.objects.get(pk=recipe_id)
 
     return render(request, 'recipe.html', {'recipe': recipe})
+
+class ShowRecipe(APIView):
+
+    def get(self, request, recipe_id):
+
+        # find the recipe given by the recipe_id and return it in JSON
+        recipe = Recipe.objects.get(pk=recipe_id)
+
+        serializer = RecipeSerializer(recipe, many=False)
+
+        return Response(serializer.data)
+
+#class for front end
+class FavouriteRecipe(APIView):
+
+    def post(self, request, recipe_id):
+
+        # get the id of the recipe and signed in user
+        curr_user_id = 1
+
+        # variable for existing records that will be made when the user favourites a recipe (No matter what a record will exist when this funciton is called)
+        exisitngRec = None
+
+        # search for row containing both keys/ids
+        occurance = UserRecipe.objects.filter(user_id=curr_user_id, recipe_id=recipe_id).first()  # latest('user_id', 'recipe_id')
+
+        # when there are no matches
+        if not occurance:
+
+            favourited = UserRecipe.objects.create(user_id=curr_user_id, recipe_id=recipe_id, favourite=True)
+            favourited.save()
+            existingRec = favourited
+
+        # when there is a match
+        else:
+
+            existingRec = occurance
+
+            # determine if the already existing recipe is favourited
+            if occurance.favourite:
+
+                # when it is already favourited check if it is saved as a cookbook
+                existing_book = getattr(occurance, 'playlist_name')
+
+                # Only delete the record if it is not already saved as a playlist
+                if not existing_book:
+                    instance = UserRecipe.objects.get(id=getattr(occurance, 'id'))
+                    instance.delete()
+                else:
+                    # if it is saved as a playlist then just updated the favourite column of the record
+                    instance = UserRecipe.objects.get(id=getattr(occurance, 'id'))
+                    instance.favourite = False
+                    instance.save()
+
+                # toggle or delete the record and it's favourite field, we always send the Json repsonse to say that favourite is false
+                return JsonResponse({'success': True, 'favourite': False})
+
+            else:
+                # when the already existing record is not favourited, update it to be favourited
+                instance = UserRecipe.objects.get(id=getattr(occurance, 'id'))
+                instance.favourite = True
+                instance.save()
+
+        #return JsonReponse notifiying true or false (favourited or not)
+
+        record = UserRecipe.objects.get(id=getattr(existingRec, 'id'))
+        record_fav = record.favourite
+
+        return JsonResponse({'success:': True, 'favourite': record_fav})
+
+    def get(self, response, recipe_id):
+
+        # out of time to add user validation :(
+        curr_user_id = 1
+
+        # search for row containing both keys/ids
+        occurance = UserRecipe.objects.filter(user_id=curr_user_id, recipe_id=recipe_id).first()  # latest('user_id', 'recipe_id')
+
+        # when there are no matches
+        if not occurance:
+
+            # when there is no occurance then that means the recipe has not been favourited and we send false to front
+            return JsonResponse({'success:': True, 'favourite': False})
+
+        # when there is a match
+        else:
+
+            # return true if the occurance is favourated and false if not
+            if occurance.favourite:
+                return JsonResponse({'success': True, 'favourite': True})
+            else:
+                return JsonResponse({'success': True, 'favourite': True})
+
+
+
 
 def favourite_recipe(request):
 
@@ -147,6 +272,77 @@ def favourite_recipe(request):
         print("hello")
 
     return render(request, 'search.html')
+
+
+class Cookbook(APIView):
+
+    def get(self, request):
+
+        # no time to add authentication for front and back end so have to include on global user : (
+        userID = 1
+
+        # find all cookbooks the user might have
+        user_userRecipe_objs = UserRecipe.objects.filter(user_id=userID)
+        all_cookbooks = user_userRecipe_objs.values("playlist_name").distinct()
+
+        return JsonResponse({'cookbooks': list(all_cookbooks)})
+
+    def post(self, request):
+
+        curr_user = 1
+
+        new_book_name = request.data['book_name']
+        recipe_id = request.data['recipeId']
+
+        # search for any occurances of the cookbook
+        existing_books = UserRecipe.objects.filter(user_id=curr_user, playlist_name=new_book_name)
+
+        if not existing_books:
+
+            # check if recipe and user already have a record in the junction table
+            existing_rec = UserRecipe.objects.filter(user_id=curr_user, recipe_id=recipe_id).first()
+
+            # if there is a record that already exists
+            if existing_rec:
+
+                # get the record's value in the favourite column
+                existing_fav = UserRecipe.objects.get(id=getattr(existing_rec, 'id'))
+
+                if not existing_fav.favourite:
+                    new_book = UserRecipe.objects.create(user_id=curr_user, recipe_id=recipe_id, favourite=False, playlist_name=new_book_name)
+                    new_book.save()
+                else:
+                    # just update the playlist name field if recipe is already saved as a favourite
+                    existing_fav.update(playlist_name=new_book_name)
+
+            else:
+                # if a record does not exist
+                new_book = UserRecipe.objects.create(user_id=curr_user, recipe_id=recipe_id, favourite=False, playlist_name=new_book_name)
+                new_book.save()
+
+        else:
+
+            # find out if the existing books already contain the recipe
+            existing_contain_recipe = UserRecipe.objects.filter(user_id=curr_user, playlist_name=new_book_name, recipe_id=recipe_id).first()
+
+            # if it does not already contain the recipe then add the recipe to the cookbook
+            if not existing_contain_recipe:
+                # if a record does not exist
+                new_book = UserRecipe.objects.create(user_id=curr_user, recipe_id=recipe_id, favourite=False, playlist_name=new_book_name)
+                new_book.save()
+
+        # at the end we want to send the updated list of cookbooks back to the front end
+        # find all cookbooks the user might have
+        # at the end we want to send the updated list of cookbooks back to the front end
+        # find all cookbooks the user might have
+        user_userRecipe_objs = UserRecipe.objects.filter(user_id=curr_user)
+        all_cookbooks = user_userRecipe_objs.values("playlist_name").distinct()
+
+        # Convert the QuerySet to a list
+        cookbooks_list = list(all_cookbooks)
+
+        return JsonResponse({'cookbooks': cookbooks_list})
+
 
 def cookbook(request):
 
