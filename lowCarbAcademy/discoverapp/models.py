@@ -39,7 +39,7 @@ class UserRecipe(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     recipe = models.ForeignKey(Recipe, on_delete=models.SET_NULL, null=True)
     favourite = models.BooleanField(default=False)
-    playlist_name = models.CharField(max_length=150)
+    playlist_name = models.CharField(max_length=150, null=True, blank=True)
 
     def __str__(self):
         return f'{self.user} {self.recipe} {self.favourite} {self.playlist_name}'

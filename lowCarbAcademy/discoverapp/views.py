@@ -223,8 +223,39 @@ class FavouriteRecipe(APIView):
             else:
                 return JsonResponse({'success': True, 'favourite': True})
 
+class Favourites(APIView):
+    def get(self, request):
 
+        # unfortunately out of time to have front and back end authentication
+        curr_user = 1
 
+        # searching through the user recipe table as it keeps track of what recipes are favourited by the user
+        recipe_userRecipe_objs = UserRecipe.objects.filter(user_id=curr_user, favourite=True)
+        all_recipe_ids = recipe_userRecipe_objs.values_list('recipe_id', flat=True).distinct()
+
+        # finding the found recipes in the recipes table
+        all_recipes = Recipe.objects.filter(id__in=all_recipe_ids)
+
+        # serializing and returning the data
+        serializer = RecipeSerializer(all_recipes, many=True)
+        return Response(serializer.data)
+
+# helper function to extract recipes from the userrecipe table based on a given user, search field, and search field filter value
+def extractRecipes(curr_user, search_field, filter_value):
+
+    #dynamically create the filter for searching for the recipe in the userrecipe table
+    filter = {search_field: filter_value, 'user_id': curr_user}
+
+    # searching through the user recipe table as it keeps track of what recipes are favourited by the user
+    recipe_userRecipe_objs = UserRecipe.objects.filter(**filter)
+    all_recipe_ids = recipe_userRecipe_objs.values_list('recipe_id', flat=True).distinct()
+
+    # finding the found recipes in the recipes table
+    all_recipes = Recipe.objects.filter(id__in=all_recipe_ids)
+
+    # serializing and returning the data
+    serializer = RecipeSerializer(all_recipes, many=True)
+    return Response(serializer.data)
 
 def favourite_recipe(request):
 
@@ -313,7 +344,9 @@ class Cookbook(APIView):
                     new_book.save()
                 else:
                     # just update the playlist name field if recipe is already saved as a favourite
-                    existing_fav.update(playlist_name=new_book_name)
+                    #existing_fav.update(playlist_name=new_book_name)
+                    existing_fav.playlist_name = new_book_name
+                    existing_fav.save()
 
             else:
                 # if a record does not exist
@@ -333,8 +366,6 @@ class Cookbook(APIView):
 
         # at the end we want to send the updated list of cookbooks back to the front end
         # find all cookbooks the user might have
-        # at the end we want to send the updated list of cookbooks back to the front end
-        # find all cookbooks the user might have
         user_userRecipe_objs = UserRecipe.objects.filter(user_id=curr_user)
         all_cookbooks = user_userRecipe_objs.values("playlist_name").distinct()
 
@@ -342,6 +373,34 @@ class Cookbook(APIView):
         cookbooks_list = list(all_cookbooks)
 
         return JsonResponse({'cookbooks': cookbooks_list})
+
+    def delete(self, request):
+
+        # get the book name and user id
+        curr_user = 1
+        book_name = request.data['book_name']
+
+        # get all the records that contain the user's id and associated book name
+        user_recipe_objs = UserRecipe.objects.filter(user_id=curr_user, playlist_name=book_name)
+
+        # loop through all the filtered objects
+        for records in user_recipe_objs:
+
+            # if it is saved as a favourite just change the playlist name field to none in the record
+            # otherwise delete the record as there is no relationship between the two anymore
+            if records.favourite:
+                records.playlist_name = None
+                records.save()
+            else:
+                records.delete()
+
+        return Response({'success': True})
+
+
+class BookRecipes(APIView):
+    def get(self, request, bookname):
+
+        return extractRecipes(1, 'playlist_name', bookname)
 
 
 def cookbook(request):
